@@ -10,14 +10,17 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash(python *), Bash(py *), Bash(*
 
 依使用者指定的功能範圍，產出一份**多分頁 Excel 驗收清單**：每個分頁是一個功能模組，每列是一條可實測的黑箱驗收項，結果欄用 Pass / Fail / N/A / Blocked。
 
-產生方式是「先由你（AI）寫一份 `spec.json`，再呼叫同資料夾的 `build_checklist.py` 產出 xlsx」。資料與產生器分離，之後改項目只要改 spec 重跑。
+本工具**通用於任何專案 / 系統**，不限特定產品（這次可能是 RFP 分析、下次可能是別的系統）。因此每次使用都要**先確認「要驗收哪個系統、哪個上線階段」**，再依該系統「當前進度」設計驗收項目，不可沿用上一個專案的內容。
+
+產生方式是「先由你（AI）寫一份 `spec.json`，再呼叫本 skill 資料夾的 `build_checklist.py` 產出 xlsx」。資料與產生器分離，之後改項目只要改 spec 重跑。
 
 ## 執行流程
 
-1. **確認範圍**
-   - 問清楚這次驗收涵蓋哪個上線批次 / 功能集。
-   - 主動讀專案線索推斷已完成功能：`甘特圖/data.json`、`CLAUDE.md`、`CHANGELOG.md`、功能里程碑清單。
-   - 若使用者已直接給功能清單（如上線說明），就以那份為準。
+1. **先確認目標系統與驗收階段**（每次必做，不可跳過）
+   - 先問清楚：這次要驗收**哪一個系統 / 產品**？要驗收**哪一個階段 / 上線批次**（例如「第一階段上線」「v2.0 UAT」「某模組驗收」）？
+   - 釐清該階段的邊界：**這次涵蓋什麼、不涵蓋什麼**——未開放或屬下一階段的功能要列出但標 N/A，不要當成缺漏。
+   - 主動讀該專案的「進度 / 範圍來源」推斷已完成功能（依專案而定，常見有）：甘特圖 / roadmap（如 `甘特圖/data.json`）、`CLAUDE.md`、`CHANGELOG.md`、release notes、issue / 里程碑清單、上線說明文件。**找不到就直接問使用者**，不要臆測。
+   - 若使用者已給功能清單（如上線說明），以那份為準，但仍要回頭與使用者確認階段邊界與已知限制。
 
 2. **設計分頁與項目**（最重要）
    - 一個**使用者操作流程 / 功能模組 = 一個分頁**（tab）。
@@ -29,8 +32,8 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash(python *), Bash(py *), Bash(*
 3. **寫 spec.json**（格式見下）。建議第一個分頁放 `intro`（說明與範圍：結果定義、填寫方式、本次範圍、已知限制、測試環境）。
 
 4. **產生 xlsx**
-   - 找一個有 `xlsxwriter` 的 python 直譯器（專案後端 venv 通常有；沒有就 `pip install xlsxwriter`）。
-   - `python build_checklist.py spec.json --out 輸出.xlsx`
+   - 找一個能用的 python 直譯器並確保有 `xlsxwriter`（若該專案有自己的 venv 優先用它；偵測不到就 `pip install xlsxwriter`）。
+   - `python <本skill路徑>/build_checklist.py spec.json --out 輸出.xlsx`（spec.json 放專案內或暫存皆可）
    - 預設 `checkbox` 模式（Excel 365 原生核取方塊）。使用者用舊版 Excel 或要相容性 → 加 `--mode dropdown`（下拉選單）。
 
 5. **回報**：檔案位置、分頁數、總項數，並提醒：原生核取方塊只在 **Excel 365 / 網頁版**才顯示為可點方塊，舊版會顯示 TRUE/FALSE（可改 dropdown 模式）。
@@ -86,4 +89,4 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash(python *), Bash(py *), Bash(*
 
 ## 參考
 
-同資料夾 `example_spec.json` 是一份完整實例（BCCS 建議書系統第一階段上線，11 分頁 / 94 項），可直接複製改寫。
+同資料夾 `example_spec.json` 是**其中一個專案**的完整實例（BCCS 建議書系統第一階段上線，11 分頁 / 95 項），**僅供版式與結構參考**。實際內容務必依「當次目標系統與其階段」重寫，**不要照抄 BCCS 的項目**。
